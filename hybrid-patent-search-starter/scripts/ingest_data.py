@@ -530,8 +530,8 @@ def main():
         try:
             count = es.count(index=index)
             print(f"  {index}: {count['count']} documents")
-    except Exception as e:
-        print(f"  {index}: Error getting count - {e}")
+        except Exception as e:
+            print(f"  {index}: Error getting count - {e}")
 
 
 if __name__ == "__main__":
