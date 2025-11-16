@@ -382,7 +382,11 @@ class PatentIngester:
             try:
                 self.es.indices.refresh(index=index)
             except Exception as e:
-                logging.exception(f"Warning: Failed to refresh index {index}: {e}")
+                logging.warning(
+                    "Failed to refresh index %s; continuing without refresh",
+                    index,
+                    exc_info=e
+                )
         
         return total_docs, failed_docs
     
