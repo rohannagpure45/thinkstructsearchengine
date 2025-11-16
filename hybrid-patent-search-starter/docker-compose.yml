@@ -9,7 +9,7 @@ services:
       - xpack.security.enabled=false
       - xpack.ml.enabled=true
       - xpack.ml.max_machine_memory_percent=30
-      - ES_JAVA_OPTS=-Xms4g -Xmx4g
+      - ES_JAVA_OPTS=-Xms1g -Xmx1g
       - cluster.name=patent-search-cluster
       - bootstrap.memory_lock=true
       - indices.query.bool.max_clause_count=10240
