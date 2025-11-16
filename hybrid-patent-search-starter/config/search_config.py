@@ -190,10 +190,6 @@ class Config(BaseSettings):
                 self.indices.patents_core
             ]
     
-    class Config:
-        env_file = ".env"
-
-
 # Singleton instance
 config = Config()
 
