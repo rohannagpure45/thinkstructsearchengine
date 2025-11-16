@@ -4,7 +4,8 @@ Centralized configuration for hybrid patent search
 
 import os
 from typing import Dict, List, Optional
-from pydantic import BaseSettings, Field
+from pydantic import Field
+from pydantic_settings import BaseSettings
 from pathlib import Path
 import json
 
