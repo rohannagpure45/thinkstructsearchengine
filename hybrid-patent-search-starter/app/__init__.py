@@ -1,0 +1,3 @@
+"""
+Hybrid Patent Search Application
+"""
