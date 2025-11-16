@@ -38,11 +38,26 @@ fi
 
 # Activate virtual environment
 echo "Activating virtual environment..."
+if [ ! -f "venv/bin/activate" ]; then
+    echo "Error: venv/bin/activate not found. Please ensure the virtual environment was created successfully." >&2
+    exit 1
+fi
+
+# shellcheck disable=SC1091
 source venv/bin/activate
+
+if [ -z "$VIRTUAL_ENV" ]; then
+    echo "Error: Failed to activate the virtual environment." >&2
+    exit 1
+fi
 
 # Install dependencies
 echo "Installing Python dependencies..."
-pip install -q -r requirements.txt
+if [ ! -f "requirements.txt" ]; then
+    echo "Error: requirements.txt not found. Please ensure it exists in the repository root." >&2
+    exit 1
+fi
+pip install -r requirements.txt
 echo "✓ Dependencies installed"
 echo ""
 
