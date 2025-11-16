@@ -5,12 +5,13 @@ Centralized configuration for hybrid patent search
 import os
 from typing import Dict, List, Optional
 from pydantic import Field
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from pathlib import Path
 import json
 
 
 class IndexConfig(BaseSettings):
+    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
     """Configuration for Elasticsearch indices"""
     
     patents_core: str = Field(
@@ -29,11 +30,8 @@ class IndexConfig(BaseSettings):
         description="Index for description paragraphs"
     )
     
-    class Config:
-        env_file = ".env"
-
-
 class ModelConfig(BaseSettings):
+    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
     """Configuration for ML models"""
     
     elser_model_id: str = Field(
@@ -69,11 +67,8 @@ class ModelConfig(BaseSettings):
             "max_seq_length": 256
         }
     
-    class Config:
-        env_file = ".env"
-
-
 class SearchConfig(BaseSettings):
+    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
     """Configuration for search parameters"""
     
     default_top_k: int = Field(
@@ -129,11 +124,8 @@ class SearchConfig(BaseSettings):
         "encoder": "html"
     }
     
-    class Config:
-        env_file = ".env"
-
-
 class PipelineConfig(BaseSettings):
+    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
     """Configuration for ingest pipelines"""
     
     elser_pipeline_base: str = Field(
@@ -151,11 +143,8 @@ class PipelineConfig(BaseSettings):
             "desc_chunks": f"{self.elser_pipeline_base}_desc"
         }
     
-    class Config:
-        env_file = ".env"
-
-
 class Config(BaseSettings):
+    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
     """Main configuration class"""
     
     # Sub-configurations
