@@ -73,15 +73,7 @@ PATENTS_PIPELINE_CONFIG=$(cat <<JSON
       "script": {
         "description": "Extract ELSER tokens to separate sparse vector fields",
         "lang": "painless",
-        "source": """
-          if (ctx._ml_inference?.title != null) {
-            ctx.title_elser = ctx._ml_inference.title.predicted_value;
-          }
-          if (ctx._ml_inference?.abstract != null) {
-            ctx.abstract_elser = ctx._ml_inference.abstract.predicted_value;
-          }
-          ctx.remove('_ml_inference');
-        """
+        "source": "if (ctx._ml_inference?.title != null) {\\n  ctx.title_elser = ctx._ml_inference.title.predicted_value;\\n}\\nif (ctx._ml_inference?.abstract != null) {\\n  ctx.abstract_elser = ctx._ml_inference.abstract.predicted_value;\\n}\\nctx.remove('_ml_inference');"
       }
     }
   ],
@@ -125,10 +117,7 @@ CLAIMS_PIPELINE_CONFIG=$(cat <<JSON
         "description": "Extract ELSER tokens to sparse vector field",
         "lang": "painless",
         "if": "ctx._ml_inference?.claim_text != null",
-        "source": """
-          ctx.claim_elser = ctx._ml_inference.claim_text.predicted_value;
-          ctx.remove('_ml_inference');
-        """
+        "source": "ctx.claim_elser = ctx._ml_inference.claim_text.predicted_value;\\nctx.remove('_ml_inference');"
       }
     }
   ],
@@ -172,10 +161,7 @@ DESC_PIPELINE_CONFIG=$(cat <<JSON
         "description": "Extract ELSER tokens to sparse vector field",
         "lang": "painless",
         "if": "ctx._ml_inference?.desc_text != null",
-        "source": """
-          ctx.desc_elser = ctx._ml_inference.desc_text.predicted_value;
-          ctx.remove('_ml_inference');
-        """
+        "source": "ctx.desc_elser = ctx._ml_inference.desc_text.predicted_value;\\nctx.remove('_ml_inference');"
       }
     }
   ],
