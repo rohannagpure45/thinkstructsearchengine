@@ -180,34 +180,46 @@ def initialize_dense_embedder():
         return False
 
 def verify_ml_node(es: Elasticsearch):
-    """Verify ML node is available"""
+    """Verify ML node is available - handle serverless mode gracefully"""
     print("\n=== Verifying ML Node Configuration ===")
     
     try:
-        # Get ML info
-        ml_info = es.ml.info()
-        
-        if ml_info.get("defaults", {}).get("ml", {}).get("enabled", False):
-            print("✓ ML features are enabled")
-        else:
-            print("✗ ML features are not enabled. Please set xpack.ml.enabled=true")
-            return False
+        # Get ML info - this may fail in serverless mode
+        try:
+            ml_info = es.ml.info()
             
-        # Check nodes
-        nodes = es.nodes.info()
-        ml_nodes = 0
-        
-        for node_id, node_info in nodes.get("nodes", {}).items():
-            roles = node_info.get("roles", [])
-            if "ml" in roles:
-                ml_nodes += 1
-                print(f"✓ Found ML node: {node_info.get('name')}")
+            if ml_info.get("defaults", {}).get("ml", {}).get("enabled", False):
+                print("✓ ML features are enabled")
+            else:
+                print("✗ ML features are not enabled. Please set xpack.ml.enabled=true")
+                return False
                 
-        if ml_nodes == 0:
-            print("✗ No ML nodes found. Please ensure at least one node has the 'ml' role")
-            return False
+            # Check nodes
+            nodes = es.nodes.info()
+            ml_nodes = 0
             
-        return True
+            for node_id, node_info in nodes.get("nodes", {}).items():
+                roles = node_info.get("roles", [])
+                if "ml" in roles:
+                    ml_nodes += 1
+                    print(f"✓ Found ML node: {node_info.get('name')}")
+                    
+            if ml_nodes == 0:
+                print("✗ No ML nodes found. Please ensure at least one node has the 'ml' role")
+                return False
+                
+            return True
+            
+        except Exception as e:
+            # Handle serverless mode where _ml/info is not available
+            error_msg = str(e).lower()
+            if "api_not_available_exception" in error_msg or "serverless" in error_msg:
+                print("⚠️  Running in serverless mode - ML endpoints not directly accessible")
+                print("   ELSER model deployment will be handled by Elastic Cloud")
+                return True
+            else:
+                print(f"✗ Error checking ML configuration: {e}")
+                return False
         
     except Exception as e:
         print(f"✗ Error checking ML configuration: {e}")

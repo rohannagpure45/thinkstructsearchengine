@@ -324,13 +324,20 @@ class PatentIngester:
             for doc in self.create_claim_docs(patent_id, claims_data):
                 yield doc
         
-        # Create description documents
+        # Create description documents - use detailed_description field
         description = self.normalize_text(
-            patent.get("description") or patent.get("Description") or patent.get("Specification")
+            patent.get("detailed_description") or patent.get("description") or patent.get("Description") or patent.get("Specification")
         )
         if description:
             for doc in self.create_description_docs(patent_id, description):
                 yield doc
+        else:
+            # Try to use abstract as fallback if no detailed_description
+            abstract = self.normalize_text(patent.get("abstract"))
+            if abstract:
+                print(f"Using abstract as description fallback for patent {patent_id}")
+                for doc in self.create_description_docs(patent_id, abstract):
+                    yield doc
     
     def ingest_patents(self, patents: Iterator[Dict[str, Any]], show_progress: bool = True):
         """Ingest patents into Elasticsearch"""
