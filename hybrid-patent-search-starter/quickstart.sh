@@ -1,5 +1,8 @@
 #!/bin/bash
 
+set -euo pipefail
+trap 'echo "Error: Setup failed at line $LINENO"; exit 1' ERR
+
 echo "==================================="
 echo "Hybrid Patent Search - Quick Start"
 echo "==================================="
@@ -8,6 +11,10 @@ echo ""
 # Check if .env exists
 if [ ! -f .env ]; then
     echo "Creating .env file from template..."
+    if [ ! -f env.example ]; then
+        echo "Error: env.example template not found." >&2
+        exit 1
+    fi
     cp env.example .env
     echo "✓ Created .env file"
     echo ""
@@ -15,18 +22,35 @@ fi
 
 # Start Elasticsearch
 echo "Starting Elasticsearch with Docker Compose..."
-docker-compose up -d
+if ! docker-compose up -d; then
+    echo "Error: Failed to start Docker Compose." >&2
+    exit 1
+fi
 
 # Wait for Elasticsearch to be healthy
 echo "Waiting for Elasticsearch to be ready..."
+es_ready=false
+health_response=""
 for i in {1..30}; do
-    if curl -s http://localhost:9200/_cluster/health | grep -q '"status":"green"\|"status":"yellow"'; then
+    health_response=$(curl -s http://localhost:9200/_cluster/health || true)
+    if echo "$health_response" | grep -q '"status":"green"\|"status":"yellow"'; then
         echo "✓ Elasticsearch is ready!"
+        es_ready=true
         break
     fi
     echo -n "."
     sleep 2
 done
+if [ "$es_ready" = false ]; then
+    echo ""
+    echo "Error: Elasticsearch failed to become healthy within the expected time." >&2
+    echo "Last health response:"
+    echo "$health_response"
+    echo ""
+    echo "Docker Compose status:"
+    docker-compose ps
+    exit 1
+fi
 echo ""
 
 # Create virtual environment if it doesn't exist
