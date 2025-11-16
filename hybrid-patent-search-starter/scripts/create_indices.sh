@@ -5,6 +5,13 @@ set -euo pipefail
 ES_HOST=${ES_HOST:-"http://localhost:9200"}
 ES_USER=${ES_USERNAME:-"elastic"}
 ES_PASS=${ES_PASSWORD:-"changeme"}
+ES_API_KEY=${ES_API_KEY:-""}
+
+if [ -n "$ES_API_KEY" ]; then
+  CURL_AUTH=(-H "Authorization: ApiKey $ES_API_KEY")
+else
+  CURL_AUTH=(-u "$ES_USER:$ES_PASS")
+fi
 
 # Index names from environment or defaults
 PATENTS_CORE=${ES_INDEX_PATENTS_CORE:-"patents_core"}
@@ -25,10 +32,10 @@ create_index() {
   echo "Creating index: $index_name"
   
   # Delete if exists (for development)
-  curl -s -u "$ES_USER:$ES_PASS" -X DELETE "$ES_HOST/$index_name" 2>/dev/null || true
+  curl -s "${CURL_AUTH[@]}" -X DELETE "$ES_HOST/$index_name" 2>/dev/null || true
   
   # Create index with mapping
-  curl -s -u "$ES_USER:$ES_PASS" -X PUT "$ES_HOST/$index_name" \
+  curl -s "${CURL_AUTH[@]}" -X PUT "$ES_HOST/$index_name" \
     -H 'Content-Type: application/json' \
     -d "$mapping" | jq '.' || echo "Failed to create $index_name"
 }

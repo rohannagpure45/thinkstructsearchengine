@@ -5,6 +5,13 @@ set -euo pipefail
 ES_HOST=${ES_HOST:-"http://localhost:9200"}
 ES_USER=${ES_USERNAME:-"elastic"}
 ES_PASS=${ES_PASSWORD:-"changeme"}
+ES_API_KEY=${ES_API_KEY:-""}
+
+if [ -n "$ES_API_KEY" ]; then
+  CURL_AUTH=(-H "Authorization: ApiKey $ES_API_KEY")
+else
+  CURL_AUTH=(-u "$ES_USER:$ES_PASS")
+fi
 ELSER_MODEL_ID=${ELSER_MODEL_ID:-".elser_model_2"}
 
 # Pipeline names
@@ -24,10 +31,10 @@ create_pipeline() {
   echo "Creating pipeline: $pipeline_name"
   
   # Delete if exists
-  curl -s -u "$ES_USER:$ES_PASS" -X DELETE "$ES_HOST/_ingest/pipeline/$pipeline_name" 2>/dev/null || true
+  curl -s "${CURL_AUTH[@]}" -X DELETE "$ES_HOST/_ingest/pipeline/$pipeline_name" 2>/dev/null || true
   
   # Create pipeline
-  response=$(curl -s -u "$ES_USER:$ES_PASS" -X PUT "$ES_HOST/_ingest/pipeline/$pipeline_name" \
+  response=$(curl -s "${CURL_AUTH[@]}" -X PUT "$ES_HOST/_ingest/pipeline/$pipeline_name" \
     -H 'Content-Type: application/json' \
     -d "$pipeline_config")
   
