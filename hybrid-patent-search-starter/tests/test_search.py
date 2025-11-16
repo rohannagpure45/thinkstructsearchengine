@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import List, Dict, Any
 import numpy as np
 from elasticsearch import Elasticsearch
+from elasticsearch.exceptions import NotFoundError
 
 # Add parent directory to path
 sys.path.append(str(Path(__file__).parent.parent))
@@ -64,7 +65,7 @@ def test_data():
 
 
 @pytest.fixture(scope="session")
-def setup_test_indices(es_client, test_data):
+def setup_test_indices(es_client, test_data, monkeypatch):
     """Setup test indices and ingest test data"""
     # Create test index names
     test_indices = {
@@ -73,16 +74,21 @@ def setup_test_indices(es_client, test_data):
         "desc_chunks": f"test_{config.indices.desc_chunks}"
     }
     
-    # Override config for tests
-    config.indices.patents_core = test_indices["patents_core"]
-    config.indices.claims_chunks = test_indices["claims_chunks"]
-    config.indices.desc_chunks = test_indices["desc_chunks"]
+    # Store original values
+    original_patents_core = config.indices.patents_core
+    original_claims_chunks = config.indices.claims_chunks
+    original_desc_chunks = config.indices.desc_chunks
+    
+    # Override config for tests using monkeypatch
+    monkeypatch.setattr(config.indices, "patents_core", test_indices["patents_core"])
+    monkeypatch.setattr(config.indices, "claims_chunks", test_indices["claims_chunks"])
+    monkeypatch.setattr(config.indices, "desc_chunks", test_indices["desc_chunks"])
     
     # Delete test indices if they exist
     for index in test_indices.values():
         try:
             es_client.indices.delete(index=index)
-        except:
+        except NotFoundError:
             pass
     
     # Create indices using test function
@@ -111,8 +117,13 @@ def setup_test_indices(es_client, test_data):
     for index in test_indices.values():
         try:
             es_client.indices.delete(index=index)
-        except:
+        except NotFoundError:
             pass
+    
+    # Restore original config
+    config.indices.patents_core = original_patents_core
+    config.indices.claims_chunks = original_claims_chunks
+    config.indices.desc_chunks = original_desc_chunks
 
 
 class TestSearchBuilders:
@@ -146,14 +157,17 @@ class TestSearchBuilders:
     
     def test_sparse_vector_query(self):
         """Test sparse vector query builder"""
-        # Test with ELSER disabled returns None
         sparse_query = build_sparse_vector_query(
             "molecular detection",
             config.indices.claims_chunks
         )
         
-        # This should work even if ELSER is not deployed
-        assert sparse_query is not None or True  # Allow None for test environment
+        # When ELSER is not deployed, the query builder returns None
+        # This test verifies the function doesn't raise an exception
+        assert sparse_query is None or (
+            isinstance(sparse_query, dict) and 
+            ("sparse_vector" in sparse_query or "dis_max" in sparse_query)
+        )
     
     def test_rrf_retriever(self):
         """Test RRF retriever builder"""
