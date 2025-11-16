@@ -44,8 +44,6 @@ create_index() {
 PATENTS_CORE_MAPPING=$(cat <<JSON
 {
   "settings": {
-    "number_of_shards": 2,
-    "number_of_replicas": 0,
     "analysis": {
       "analyzer": {
         "patent_analyzer": {
@@ -132,8 +130,6 @@ JSON
 CLAIMS_CHUNKS_MAPPING=$(cat <<JSON
 {
   "settings": {
-    "number_of_shards": 3,
-    "number_of_replicas": 0,
     "analysis": {
       "analyzer": {
         "patent_analyzer": {
@@ -201,8 +197,6 @@ JSON
 DESC_CHUNKS_MAPPING=$(cat <<JSON
 {
   "settings": {
-    "number_of_shards": 2,
-    "number_of_replicas": 0,
     "analysis": {
       "analyzer": {
         "patent_analyzer": {
