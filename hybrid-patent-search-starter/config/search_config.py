@@ -194,7 +194,11 @@ class Config(BaseSettings):
         elif search_scope == "descriptions":
             return [self.indices.desc_chunks]
         else:  # all
-            return [self.indices.claims_chunks, self.indices.patents_core]
+            return [
+                self.indices.claims_chunks,
+                self.indices.desc_chunks,
+                self.indices.patents_core
+            ]
     
     class Config:
         env_file = ".env"
