@@ -3,6 +3,36 @@
 set -euo pipefail
 trap 'echo "Error: Setup failed at line $LINENO"; exit 1' ERR
 
+# Guard helper functions
+fail() {
+    echo "Error: $1" >&2
+    exit 1
+}
+
+ensure_file() {
+    if [ ! -f "$1" ]; then
+        fail "Required file not found: $1"
+    fi
+}
+
+ensure_executable() {
+    if [ ! -f "$1" ]; then
+        fail "Required script not found: $1"
+    fi
+    if [ ! -x "$1" ]; then
+        echo "Making $1 executable..."
+        if ! chmod +x "$1"; then
+            fail "Failed to make $1 executable"
+        fi
+    fi
+}
+
+run_or_exit() {
+    if ! "$@"; then
+        fail "Command failed: $*"
+    fi
+}
+
 echo "==================================="
 echo "Hybrid Patent Search - Quick Start"
 echo "==================================="
@@ -85,24 +115,34 @@ pip install -r requirements.txt
 echo "✓ Dependencies installed"
 echo ""
 
+# Preflight checks: verify all required scripts and data files exist
+echo "Running preflight checks..."
+ensure_file "scripts/setup_ml_models.py"
+ensure_file "scripts/ingest_data.py"
+ensure_executable "scripts/create_indices.sh"
+ensure_executable "scripts/register_elser_pipeline.sh"
+ensure_file "data/sample_patents.json"
+echo "✓ All preflight checks passed"
+echo ""
+
 # Setup ML models
 echo "Setting up ML models..."
-python scripts/setup_ml_models.py
+run_or_exit python scripts/setup_ml_models.py
 echo ""
 
 # Create indices
 echo "Creating Elasticsearch indices..."
-./scripts/create_indices.sh
+run_or_exit ./scripts/create_indices.sh
 echo ""
 
 # Register ELSER pipeline
 echo "Registering ELSER ingest pipelines..."
-./scripts/register_elser_pipeline.sh
+run_or_exit ./scripts/register_elser_pipeline.sh
 echo ""
 
 # Ingest sample data
 echo "Ingesting sample patent data..."
-python scripts/ingest_data.py --input data/sample_patents.json
+run_or_exit python scripts/ingest_data.py --input data/sample_patents.json
 echo ""
 
 echo "==================================="
