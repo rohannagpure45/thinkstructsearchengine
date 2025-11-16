@@ -5,10 +5,12 @@ Ingest patent data into Elasticsearch with chunking and dual embeddings
 
 import argparse
 import os
+import re
 import sys
 import glob
 import json
 import uuid
+import logging
 from pathlib import Path
 from typing import List, Dict, Any, Optional, Iterator
 from tqdm import tqdm
@@ -35,12 +37,14 @@ class PatentIngester:
         es_client: Elasticsearch,
         use_dense_embeddings: bool = True,
         use_elser: bool = True,
-        batch_size: int = 100
+        batch_size: int = 100,
+        chunk_size: int = 400
     ):
         self.es = es_client
         self.use_dense_embeddings = use_dense_embeddings
         self.use_elser = use_elser
         self.batch_size = batch_size
+        self.chunk_size = chunk_size
         
         # Initialize sentence transformer if needed
         self.embedder = None
@@ -98,8 +102,6 @@ class PatentIngester:
         
         if isinstance(claims_data, str):
             # Simple string format - split by claim numbers
-            import re
-            
             # Split by patterns like "1.", "2.", etc.
             claim_pattern = r'(\d+)\.\s*(.*?)(?=\d+\.|$)'
             matches = re.findall(claim_pattern, claims_data, re.DOTALL)
@@ -107,16 +109,18 @@ class PatentIngester:
             for num, text in matches:
                 text = text.strip()
                 if text:
-                    # Determine if it's independent or dependent
+                    # Default to independent claim
                     claim_type = "independent"
                     dependency = None
                     
-                    if any(phrase in text.lower() for phrase in ["claim", "wherein", "thereof"]):
-                        # Check for dependency references
-                        dep_match = re.search(r'claim\s+(\d+)', text.lower())
-                        if dep_match:
-                            claim_type = "dependent"
-                            dependency = int(dep_match.group(1))
+                    # Check for explicit claim reference at the start of the claim text
+                    # Pattern matches: "The/An/A ... of/according to claim(s) X" at the beginning
+                    # Case-insensitive match after trimming whitespace
+                    dep_pattern = r'^(the|an|a)\s+.*?(?:of|according\s+to)\s+claim[s]?\s+(\d+)'
+                    dep_match = re.search(dep_pattern, text, re.IGNORECASE)
+                    if dep_match:
+                        claim_type = "dependent"
+                        dependency = int(dep_match.group(2))
                     
                     claims.append({
                         "claim_num": int(num),
@@ -237,15 +241,14 @@ class PatentIngester:
     def create_description_docs(
         self,
         patent_id: str,
-        description: str,
-        chunk_size: int = 400
+        description: str
     ) -> List[Dict[str, Any]]:
         """Create description chunk documents"""
         if not description:
             return []
         
         # Chunk the description
-        chunks = self.chunk_text(description, chunk_size=chunk_size, overlap=50)
+        chunks = self.chunk_text(description, chunk_size=self.chunk_size, overlap=50)
         
         # Generate embeddings in batch
         if self.use_dense_embeddings and chunks:
@@ -378,8 +381,12 @@ class PatentIngester:
         for index in config.get_index_list():
             try:
                 self.es.indices.refresh(index=index)
-            except:
-                pass
+            except Exception as e:
+                logging.warning(
+                    "Failed to refresh index %s; continuing without refresh",
+                    index,
+                    exc_info=e
+                )
         
         return total_docs, failed_docs
     
@@ -499,7 +506,8 @@ def main():
         es_client=es,
         use_dense_embeddings=not args.no_dense,
         use_elser=not args.no_elser,
-        batch_size=args.batch_size
+        batch_size=args.batch_size,
+        chunk_size=args.chunk_size
     )
     
     print(f"\nIngestion settings:")
@@ -526,8 +534,8 @@ def main():
         try:
             count = es.count(index=index)
             print(f"  {index}: {count['count']} documents")
-        except:
-            print(f"  {index}: Error getting count")
+        except Exception as e:
+            print(f"  {index}: Error getting count - {e}")
 
 
 if __name__ == "__main__":

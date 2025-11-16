@@ -61,7 +61,7 @@ def deploy_elser_model(es: Elasticsearch):
     try:
         model_info = es.ml.get_trained_models(model_id=elser_model_id)
         print(f"✓ Model '{elser_model_id}' already exists")
-    except:
+    except Exception as e:
         print(f"✗ Model '{elser_model_id}' not found. Please ensure you have the correct Elasticsearch license.")
         print("  ELSER requires at least a Platinum license or Elastic Cloud.")
         print("  You can start a free trial: https://www.elastic.co/subscriptions")
@@ -230,6 +230,7 @@ def main():
         sys.exit(1)
     
     # Verify ML node
+    elser_success = False
     if not verify_ml_node(es):
         print("\n⚠️  ML node verification failed. ELSER deployment may not work.")
         print("   Continuing with dense embeddings setup...")
@@ -249,10 +250,10 @@ def main():
     # Summary
     print("\n" + "=" * 50)
     print("Setup Summary:")
-    print(f"  ELSER v2 Model: {'✓ Ready' if 'elser_success' in locals() and elser_success else '✗ Not available'}")
+    print(f"  ELSER v2 Model: {'✓ Ready' if elser_success else '✗ Not available'}")
     print(f"  Dense Embedder: {'✓ Ready' if dense_success else '✗ Failed'}")
     
-    if not (('elser_success' in locals() and elser_success) or dense_success):
+    if not (elser_success or dense_success):
         print("\n✗ No embedding models available. Please check the errors above.")
         sys.exit(1)
     else:

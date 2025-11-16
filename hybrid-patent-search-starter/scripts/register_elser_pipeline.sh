@@ -8,9 +8,10 @@ ES_PASS=${ES_PASSWORD:-"changeme"}
 ELSER_MODEL_ID=${ELSER_MODEL_ID:-".elser_model_2"}
 
 # Pipeline names
-PATENTS_PIPELINE=${ELSER_PIPELINE_NAME:-"elser_patents_pipeline"}
-CLAIMS_PIPELINE="${ELSER_PIPELINE_NAME}_claims"
-DESC_PIPELINE="${ELSER_PIPELINE_NAME}_desc"
+BASE_PIPELINE=${ELSER_PIPELINE_NAME:-"elser_ingest_pipeline"}
+PATENTS_PIPELINE="${BASE_PIPELINE}_patents"
+CLAIMS_PIPELINE="${BASE_PIPELINE}_claims"
+DESC_PIPELINE="${BASE_PIPELINE}_desc"
 
 echo "Registering ELSER ingest pipelines using model [$ELSER_MODEL_ID]"
 echo "=================================================="

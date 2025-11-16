@@ -56,8 +56,12 @@ class ModelConfig(BaseSettings):
         """Load embedding model info if available"""
         config_file = Path(__file__).parent / "embedding_model.json"
         if config_file.exists():
-            with open(config_file) as f:
-                return json.load(f)
+            try:
+                with open(config_file) as f:
+                    return json.load(f)
+            except (json.JSONDecodeError, OSError):
+                # Fall back to defaults if file is malformed or unreadable
+                pass
         return {
             "model_name": self.dense_embedding_model,
             "embedding_dims": self.embedding_dims,
@@ -190,7 +194,11 @@ class Config(BaseSettings):
         elif search_scope == "descriptions":
             return [self.indices.desc_chunks]
         else:  # all
-            return [self.indices.claims_chunks, self.indices.patents_core]
+            return [
+                self.indices.claims_chunks,
+                self.indices.desc_chunks,
+                self.indices.patents_core
+            ]
     
     class Config:
         env_file = ".env"
