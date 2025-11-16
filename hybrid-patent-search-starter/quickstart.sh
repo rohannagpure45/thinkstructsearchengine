@@ -29,21 +29,21 @@ fi
 
 # Wait for Elasticsearch to be healthy
 echo "Waiting for Elasticsearch to be ready..."
-es_ready=false
+ES_READY=0
 health_response=""
 for i in {1..30}; do
-    health_response=$(curl -s http://localhost:9200/_cluster/health || true)
-    if echo "$health_response" | grep -q '"status":"green"\|"status":"yellow"'; then
+    health_response=$(curl -s --max-time 2 http://localhost:9200/_cluster/health || true)
+    if echo "$health_response" | grep -qE '"status":"(green|yellow)"'; then
         echo "✓ Elasticsearch is ready!"
-        es_ready=true
+        ES_READY=1
         break
     fi
     echo -n "."
     sleep 2
 done
-if [ "$es_ready" = false ]; then
+if [ $ES_READY -eq 0 ]; then
     echo ""
-    echo "Error: Elasticsearch failed to become healthy within the expected time." >&2
+    echo "Error: Elasticsearch did not become ready after 60 seconds" >&2
     echo "Last health response:"
     echo "$health_response"
     echo ""
