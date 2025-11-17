@@ -83,6 +83,35 @@ curl -X POST "http://localhost:8000/search" \
   }'
 ```
 
+### Inspecting Ranked Results with `jq`
+
+The `/search` endpoint aggregates hits by patent by default (`aggregate_by_patent: true`), so the response contains an `aggregated_results` array ordered by total score. Use `jq` to pretty-print the ranking and top-level scores:
+
+```bash
+curl -s "http://127.0.0.1:8000/search" \
+  -H "Content-Type: application/json" \
+  -d '{
+        "q": "anti-rotation composite spoke wheel rim",
+        "top_k": 10,
+        "search_scope": "all",
+        "use_embeddings": true,
+        "filters": null,
+        "aggregate_by_patent": true
+      }' \
+  | jq '{total_hits,
+         search_time_ms,
+         aggregated_results: [((.aggregated_results // []) | to_entries[] |
+           {rank: (.key + 1),
+            patent_id: .value.patent_id,
+            total_score: .value.total_score,
+            best_score: .value.best_score,
+            hit_count: .value.hit_count,
+            title: .value.title})]}'
+```
+
+- Change `aggregate_by_patent` to `false` if you want the raw `hits` array instead of aggregated patent groups.
+- Pipe the JSON through `python -m json.tool` or another formatter if `jq` is unavailable.
+
 ## Architecture
 
 ### Indices

@@ -54,26 +54,41 @@ PATENTS_PIPELINE_CONFIG=$(cat <<JSON
     {
       "inference": {
         "model_id": "$ELSER_MODEL_ID",
-        "field_map": {
-          "title": "text_field",
-          "abstract": "text_field"
-        },
-        "target_field": "_ml_inference",
+        "if": "ctx.title != null && ctx.title.length() > 0",
+        "input_output": [
+          {
+            "input_field": "title",
+            "output_field": "title_elser"
+          }
+        ],
         "on_failure": [
           {
             "set": {
               "field": "_ingest_error",
-              "value": "ELSER inference failed: {{_ingest.on_failure_message}}"
+              "value": "ELSER inference failed for title: {{_ingest.on_failure_message}}"
             }
           }
         ]
       }
     },
     {
-      "script": {
-        "description": "Extract ELSER tokens to separate sparse vector fields",
-        "lang": "painless",
-        "source": "if (ctx._ml_inference?.title != null) {\\n  ctx.title_elser = ctx._ml_inference.title.predicted_value;\\n}\\nif (ctx._ml_inference?.abstract != null) {\\n  ctx.abstract_elser = ctx._ml_inference.abstract.predicted_value;\\n}\\nctx.remove('_ml_inference');"
+      "inference": {
+        "model_id": "$ELSER_MODEL_ID",
+        "if": "ctx.abstract != null && ctx.abstract.length() > 0",
+        "input_output": [
+          {
+            "input_field": "abstract",
+            "output_field": "abstract_elser"
+          }
+        ],
+        "on_failure": [
+          {
+            "set": {
+              "field": "_ingest_error",
+              "value": "ELSER inference failed for abstract: {{_ingest.on_failure_message}}"
+            }
+          }
+        ]
       }
     }
   ],
@@ -97,27 +112,21 @@ CLAIMS_PIPELINE_CONFIG=$(cat <<JSON
     {
       "inference": {
         "model_id": "$ELSER_MODEL_ID",
-        "field_map": {
-          "claim_text": "text_field"
-        },
-        "target_field": "_ml_inference",
         "if": "ctx.claim_text != null && ctx.claim_text.length() > 0",
+        "input_output": [
+          {
+            "input_field": "claim_text",
+            "output_field": "claim_elser"
+          }
+        ],
         "on_failure": [
           {
             "set": {
               "field": "_ingest_error",
-              "value": "ELSER inference failed: {{_ingest.on_failure_message}}"
+              "value": "ELSER inference failed for claim_text: {{_ingest.on_failure_message}}"
             }
           }
         ]
-      }
-    },
-    {
-      "script": {
-        "description": "Extract ELSER tokens to sparse vector field",
-        "lang": "painless",
-        "if": "ctx._ml_inference?.claim_text != null",
-        "source": "ctx.claim_elser = ctx._ml_inference.claim_text.predicted_value;\\nctx.remove('_ml_inference');"
       }
     }
   ],
@@ -141,27 +150,21 @@ DESC_PIPELINE_CONFIG=$(cat <<JSON
     {
       "inference": {
         "model_id": "$ELSER_MODEL_ID",
-        "field_map": {
-          "desc_text": "text_field"
-        },
-        "target_field": "_ml_inference",
         "if": "ctx.desc_text != null && ctx.desc_text.length() > 0",
+        "input_output": [
+          {
+            "input_field": "desc_text",
+            "output_field": "desc_elser"
+          }
+        ],
         "on_failure": [
           {
             "set": {
               "field": "_ingest_error",
-              "value": "ELSER inference failed: {{_ingest.on_failure_message}}"
+              "value": "ELSER inference failed for desc_text: {{_ingest.on_failure_message}}"
             }
           }
         ]
-      }
-    },
-    {
-      "script": {
-        "description": "Extract ELSER tokens to sparse vector field",
-        "lang": "painless",
-        "if": "ctx._ml_inference?.desc_text != null",
-        "source": "ctx.desc_elser = ctx._ml_inference.desc_text.predicted_value;\\nctx.remove('_ml_inference');"
       }
     }
   ],
