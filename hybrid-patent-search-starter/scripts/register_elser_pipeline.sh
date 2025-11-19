@@ -181,6 +181,7 @@ JSON
 )
 
 # Create all pipelines
+# index through the appropriate pipeline (?pipeline=...) so those fields are ready for semantic queries
 create_pipeline "$PATENTS_PIPELINE" "$PATENTS_PIPELINE_CONFIG"
 create_pipeline "$CLAIMS_PIPELINE" "$CLAIMS_PIPELINE_CONFIG"
 create_pipeline "$DESC_PIPELINE" "$DESC_PIPELINE_CONFIG"

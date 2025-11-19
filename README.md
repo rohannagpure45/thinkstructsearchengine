@@ -1,6 +1,23 @@
 # Hybrid Patent Search Starter
 
-A production-ready patent search engine using Elasticsearch's hybrid search capabilities, combining BM25 lexical search with both dense vector (kNN) and sparse vector (ELSER v2) semantic search.
+A patent search engine using Elasticsearch's hybrid search capabilities, combining BM25 lexical search with both dense vector (kNN) and sparse vector (ELSER v2) semantic search.
+
+
+## Problem statement and Goal
+
+1. **Goals**
+- Build a patent search that “gets meaning,” not just words: Supports Natural Langage queries and claim-text queries over Titles/Abstracts/Claims/Desc.
+- Hybrid ranking that merges BM25 lexical hits with semantic candidates.
+- If time permits, add reranking later via Elastic’s Inference API (Cohere/Voyage/HF/Jina) and add image/structure vectors for diagrams.
+
+2. **Enhancement**
+- Cross‑encoder semantic re‑ranking via Elastic’s Inference API.
+- Boosts Top‑K precision by letting a model re‑read each (query, doc) pair and reorder candidates
+
+3. **How the Code Addresses the Problem**
+- Hybrid retrieval: BM25 + dense + ELSER using Reciprocal Rank Fusion (RRF)
+- Multi‑index mapping built for claims & paragraphs
+- ELSER pipelines per section
 
 ## Features
 
